@@ -41,21 +41,21 @@ export default function App() {
       isProcessing: true,
     };
 
-    setMessages(prev => [...prev, newMessage]);
+    setMessages((prev) => [...prev, newMessage]);
     setInputText('');
 
     try {
       const [detection] = await chrome.ai.languageDetection.detect(newMessage.text);
-      setMessages(prev =>
-        prev.map(msg =>
+      setMessages((prev) =>
+        prev.map((msg) =>
           msg.id === newMessage.id
             ? { ...msg, detectedLanguage: detection.language, isProcessing: false }
             : msg
         )
       );
     } catch (error) {
-      setMessages(prev =>
-        prev.map(msg =>
+      setMessages((prev) =>
+        prev.map((msg) =>
           msg.id === newMessage.id
             ? { ...msg, error: 'Language detection failed', isProcessing: false }
             : msg
@@ -65,25 +65,25 @@ export default function App() {
   };
 
   const handleSummarize = async (messageId: string) => {
-    setMessages(prev =>
-      prev.map(msg =>
+    setMessages((prev) =>
+      prev.map((msg) =>
         msg.id === messageId ? { ...msg, isProcessing: true, error: undefined } : msg
       )
     );
 
     try {
-      const message = messages.find(msg => msg.id === messageId);
+      const message = messages.find((msg) => msg.id === messageId);
       if (!message) return;
 
       const summary = await chrome.ai.summarizer.summarize(message.text);
-      setMessages(prev =>
-        prev.map(msg =>
+      setMessages((prev) =>
+        prev.map((msg) =>
           msg.id === messageId ? { ...msg, summary, isProcessing: false } : msg
         )
       );
     } catch (error) {
-      setMessages(prev =>
-        prev.map(msg =>
+      setMessages((prev) =>
+        prev.map((msg) =>
           msg.id === messageId
             ? { ...msg, error: 'Summarization failed', isProcessing: false }
             : msg
@@ -93,14 +93,14 @@ export default function App() {
   };
 
   const handleTranslate = async (messageId: string) => {
-    setMessages(prev =>
-      prev.map(msg =>
+    setMessages((prev) =>
+      prev.map((msg) =>
         msg.id === messageId ? { ...msg, isProcessing: true, error: undefined } : msg
       )
     );
 
     try {
-      const message = messages.find(msg => msg.id === messageId);
+      const message = messages.find((msg) => msg.id === messageId);
       if (!message) return;
 
       const translation = await chrome.ai.translator.translate({
@@ -108,16 +108,16 @@ export default function App() {
         targetLanguage: message.targetLanguage,
       });
 
-      setMessages(prev =>
-        prev.map(msg =>
+      setMessages((prev) =>
+        prev.map((msg) =>
           msg.id === messageId
             ? { ...msg, translation: translation.text, isProcessing: false }
             : msg
         )
       );
     } catch (error) {
-      setMessages(prev =>
-        prev.map(msg =>
+      setMessages((prev) =>
+        prev.map((msg) =>
           msg.id === messageId
             ? { ...msg, error: 'Translation failed', isProcessing: false }
             : msg
@@ -140,12 +140,18 @@ export default function App() {
   return (
     <div className="flex flex-col h-screen bg-gray-100">
       <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-4">
-        {messages.map(message => (
-          <div key={message.id} className="bg-white rounded-lg p-4 shadow-md max-w-4/5 self-start">
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className="bg-white rounded-lg p-4 shadow-md max-w-[80%] self-start"
+          >
             <p className="mb-2 leading-relaxed">{message.text}</p>
             {message.detectedLanguage && (
               <div className="text-sm text-gray-600 mb-2">
-                Detected: {message.detectedLanguage}
+                Detected: {
+                  supportedLanguages.find((lang) => lang.code === message.detectedLanguage)?.name ||
+                  message.detectedLanguage
+                }
               </div>
             )}
             {message.error && <div className="text-red-600 mt-2 text-sm">{message.error}</div>}
@@ -157,12 +163,17 @@ export default function App() {
             )}
             {message.translation && (
               <div className="mt-4 p-2 bg-gray-200 rounded">
-                <h4 className="font-semibold">Translation ({message.targetLanguage}):</h4>
+                <h4 className="font-semibold">
+                  Translation ({
+                    supportedLanguages.find((lang) => lang.code === message.targetLanguage)?.name ||
+                    message.targetLanguage
+                  }):
+                </h4>
                 <p>{message.translation}</p>
               </div>
             )}
             <div className="flex gap-2 mt-4">
-              {message.detectedLanguage === 'en' && message.text.length > 150 && (
+              {message.detectedLanguage === 'en' && message.text.length >= 150 && (
                 <button
                   onClick={() => handleSummarize(message.id)}
                   disabled={message.isProcessing}
@@ -173,16 +184,16 @@ export default function App() {
               )}
               <select
                 value={message.targetLanguage}
-                onChange={e =>
-                  setMessages(prev =>
-                    prev.map(msg =>
+                onChange={(e) =>
+                  setMessages((prev) =>
+                    prev.map((msg) =>
                       msg.id === message.id ? { ...msg, targetLanguage: e.target.value } : msg
                     )
                   )
                 }
                 className="px-2 py-1 border rounded border-gray-300"
               >
-                {supportedLanguages.map(lang => (
+                {supportedLanguages.map((lang) => (
                   <option key={lang.code} value={lang.code}>
                     {lang.name}
                   </option>
@@ -202,9 +213,9 @@ export default function App() {
       <div className="flex gap-2 p-4 bg-white border-t border-gray-200">
         <textarea
           value={inputText}
-          onChange={e => setInputText(e.target.value)}
+          onChange={(e) => setInputText(e.target.value)}
           placeholder="Enter text here..."
-          onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
+          onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSend()}
           className="flex-1 p-3 border rounded border-gray-300 resize-none min-h-[100px]"
         />
         <button
